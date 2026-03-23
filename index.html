@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Projecte Gimnàs</title>
+
+<style>
+
+body{
+    margin:0;
+    font-family: Arial, sans-serif;
+    background:#f4f4f4;
+}
+
+/* Capçalera */
+header{
+    background:#111;
+    color:white;
+    padding:20px;
+    text-align:center;
+}
+
+nav{
+    background:#222;
+    padding:10px;
+    text-align:center;
+}
+
+nav a{
+    color:white;
+    margin:0 15px;
+    text-decoration:none;
+    font-weight:bold;
+}
+
+/* Botó login */
+.login-btn{
+    background:#00ff88;
+    color:#111 !important;
+    padding:8px 15px;
+    border-radius:5px;
+}
+
+.login-btn:hover{
+    background:#00cc6a;
+}
+
+/* Hero */
+.hero{
+    background:url("https://images.unsplash.com/photo-1554284126-aa88f22d8b74") center/cover;
+    color:white;
+    padding:120px 20px;
+    text-align:center;
+}
+
+.hero h1{
+    font-size:48px;
+}
+
+.hero p{
+    font-size:20px;
+}
+
+/* Botó principal */
+.btn{
+    display:inline-block;
+    margin-top:20px;
+    padding:12px 25px;
+    background:#00ff88;
+    color:#111;
+    text-decoration:none;
+    border-radius:5px;
+    font-weight:bold;
+}
+
+.btn:hover{
+    background:#00cc6a;
+}
+
+/* Seccions */
+section{
+    padding:60px 20px;
+    max-width:1000px;
+    margin:auto;
+}
+
+h2{
+    text-align:center;
+    margin-bottom:30px;
+}
+
+/* Serveis */
+.serveis{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:20px;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    box-shadow:0 0 10px rgba(0,0,0,0.1);
+    text-align:center;
+}
+
+/* Horari */
+.horari{
+    text-align:center;
+    background:#eaeaea;
+    border-radius:10px;
+    padding:20px;
+}
+
+/* Contacte */
+.contacte{
+    text-align:center;
+}
+
+/* Footer */
+footer{
+    background:#111;
+    color:white;
+    text-align:center;
+    padding:20px;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>Projecte Gimnàs</h1>
+<p>Transforma el teu cos, millora la teva vida</p>
+</header>
+
+<nav>
+<a href="#sobre">Sobre nosaltres</a>
+<a href="#serveis">Serveis</a>
+<a href="#horari">Horari</a>
+<a href="#contacte">Contacte</a>
+<a href="login.php" class="login-btn">Login</a>
+</nav>
+
+<div class="hero">
+<h1>Benvingut a Projecte Gimnàs</h1>
+<p>El lloc ideal per entrenar i superar els teus límits</p>
+
+<a href="login.html" class="btn">Accedeix al teu compte</a>
+</div>
+
+<section id="sobre">
+<h2>Sobre nosaltres</h2>
+<p>
+A <strong>Projecte Gimnàs</strong> treballem per ajudar-te a aconseguir els teus objectius.
+Disposem de maquinària moderna, entrenadors qualificats i un ambient motivador.
+</p>
+</section>
+
+<section id="serveis">
+<h2>Els nostres serveis</h2>
+
+<div class="serveis">
+<div class="card">
+<h3>Entrenament personal</h3>
+<p>Plans adaptats a cada persona.</p>
+</div>
+
+<div class="card">
+<h3>Zona de musculació</h3>
+<p>Maquinària moderna.</p>
+</div>
+
+<div class="card">
+<h3>Classes dirigides</h3>
+<p>Spinning, HIIT i més.</p>
+</div>
+
+<div class="card">
+<h3>Nutrició</h3>
+<p>Assessorament personalitzat.</p>
+</div>
+</div>
+
+</section>
+
+<section id="horari">
+<h2>Horari</h2>
+
+<div class="horari">
+<p><strong>Dilluns - Divendres:</strong> 6:00 - 22:00</p>
+<p><strong>Dissabte:</strong> 8:00 - 20:00</p>
+<p><strong>Diumenge:</strong> 9:00 - 14:00</p>
+</div>
+
+</section>
+
+<section id="contacte">
+<h2>Contacte</h2>
+
+<div class="contacte">
+<p>📍 Carrer de l'Esport, 25</p>
+<p>📞 600 123 456</p>
+<p>📧 info@projectegimnas.cat</p>
+</div>
+
+</section>
+
+<footer>
+<p>© 2026 Projecte Gimnàs</p>
+</footer>
+
+</body>
+</html>
