@@ -27,7 +27,7 @@ exit;
 
 }else{
 
-$error="Usuario o contraseña incorrectos";
+$error="Usuari o contrasenya incorrectes";
 
 }
 

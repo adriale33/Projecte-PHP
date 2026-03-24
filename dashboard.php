@@ -1,3 +1,9 @@
+<?php
+require_once 'auth.php';
+requireLogin();
+?>
+
+
 <!DOCTYPE html>
 <html lang="ca">
 <head>
@@ -100,8 +106,8 @@ table th{
 
 <div class="sidebar">
 <h2>Projecte Gimnàs</h2>
-<a href="#">💪 Classes</a>
-<a href="#">📅 Reserves</a>
+<a href="#clases">💪 Classes</a>
+<a href="#clases">📅 Reserves</a>
 </div>
 
 <div class="main">
@@ -111,99 +117,293 @@ table th{
 <a href="logout.php" class="logout">Tancar sessió</a>
 </div>
 
-<h2>Activitats dirigides</h2>
+<h2 id="clases">Activitats dirigides</h2>
 
 <table>
 <tr>
 <th>Activitat</th>
 <th>Durada</th>
-<th>Accions</th>
+<th>Reserva</th>
+
+<?php if($_SESSION['rol'] == 'admin'): ?>
+<th>Edició</th>
+<?php endif; ?>
+
 </tr>
 
-<tr><td>BodyPump</td><td>1h</td><td>
-<button class="btn join" onclick="apuntar()">Apuntar-se</button>
-<span class="admin-only">
-<button class="btn add" onclick="afegir()">➕</button>
-<button class="btn edit" onclick="editar()">✏️</button>
-<button class="btn delete" onclick="eliminar()">🗑️</button>
-</span>
-</td></tr>
+<!-- FILA 1 -->
+<tr>
+<td>BodyPump</td>
+<td>1h</td>
 
-<tr><td>Core</td><td>30 min</td><td>
+<td>
 <button class="btn join" onclick="apuntar()">Apuntar-se</button>
-<span class="admin-only">
+</td>
+
+<?php if($_SESSION['rol'] == 'admin'): ?>
+<td>
 <button class="btn add">➕</button>
 <button class="btn edit">✏️</button>
 <button class="btn delete">🗑️</button>
-</span>
-</td></tr>
+</td>
+<?php endif; ?>
+</tr>
 
-<tr><td>BodyBalance</td><td>1h</td><td>
-<button class="btn join" onclick="apuntar()">Apuntar-se</button>
-<span class="admin-only"><button class="btn add">➕</button><button class="btn edit">✏️</button><button class="btn delete">🗑️</button></span>
-</td></tr>
+<!-- FILA 2 -->
+<tr>
+<td>Core</td>
+<td>30min</td>
 
-<tr><td>Pilates</td><td>1h</td><td>
+<td>
 <button class="btn join" onclick="apuntar()">Apuntar-se</button>
-<span class="admin-only"><button class="btn add">➕</button><button class="btn edit">✏️</button><button class="btn delete">🗑️</button></span>
-</td></tr>
+</td>
 
-<tr><td>Yoga</td><td>1h</td><td>
-<button class="btn join" onclick="apuntar()">Apuntar-se</button>
-<span class="admin-only"><button class="btn add">➕</button><button class="btn edit">✏️</button><button class="btn delete">🗑️</button></span>
-</td></tr>
+<?php if($_SESSION['rol'] == 'admin'): ?>
+<td>
+<button class="btn add">➕</button>
+<button class="btn edit">✏️</button>
+<button class="btn delete">🗑️</button>
+</td>
+<?php endif; ?>
+</tr>
 
-<tr><td>BodyCombat</td><td>1h</td><td>
-<button class="btn join" onclick="apuntar()">Apuntar-se</button>
-<span class="admin-only"><button class="btn add">➕</button><button class="btn edit">✏️</button><button class="btn delete">🗑️</button></span>
-</td></tr>
+<!-- FILA 3 -->
+<tr>
+<td>BodyBalance</td>
+<td>1h</td>
 
-<tr><td>Boxeo</td><td>1h</td><td>
+<td>
 <button class="btn join" onclick="apuntar()">Apuntar-se</button>
-<span class="admin-only"><button class="btn add">➕</button><button class="btn edit">✏️</button><button class="btn delete">🗑️</button></span>
-</td></tr>
+</td>
 
-<tr><td>HBX Boxing</td><td>1h</td><td>
-<button class="btn join" onclick="apuntar()">Apuntar-se</button>
-<span class="admin-only"><button class="btn add">➕</button><button class="btn edit">✏️</button><button class="btn delete">🗑️</button></span>
-</td></tr>
+<?php if($_SESSION['rol'] == 'admin'): ?>
+<td>
+<button class="btn add">➕</button>
+<button class="btn edit">✏️</button>
+<button class="btn delete">🗑️</button>
+</td>
+<?php endif; ?>
+</tr>
 
-<tr><td>Ciclo indoor</td><td>45 min</td><td>
-<button class="btn join" onclick="apuntar()">Apuntar-se</button>
-<span class="admin-only"><button class="btn add">➕</button><button class="btn edit">✏️</button><button class="btn delete">🗑️</button></span>
-</td></tr>
+<!-- FILA 4 -->
+<tr>
+<td>Pilates</td>
+<td>1h</td>
 
-<tr><td>Ciclo Virtual</td><td>45 min</td><td>
+<td>
 <button class="btn join" onclick="apuntar()">Apuntar-se</button>
-<span class="admin-only"><button class="btn add">➕</button><button class="btn edit">✏️</button><button class="btn delete">🗑️</button></span>
-</td></tr>
+</td>
 
-<tr><td>BodyPump Virtual</td><td>1h</td><td>
-<button class="btn join" onclick="apuntar()">Apuntar-se</button>
-<span class="admin-only"><button class="btn add">➕</button><button class="btn edit">✏️</button><button class="btn delete">🗑️</button></span>
-</td></tr>
+<?php if($_SESSION['rol'] == 'admin'): ?>
+<td>
+<button class="btn add">➕</button>
+<button class="btn edit">✏️</button>
+<button class="btn delete">🗑️</button>
+</td>
+<?php endif; ?>
+</tr>
 
-<tr><td>Core Virtual</td><td>30 min</td><td>
-<button class="btn join" onclick="apuntar()">Apuntar-se</button>
-<span class="admin-only"><button class="btn add">➕</button><button class="btn edit">✏️</button><button class="btn delete">🗑️</button></span>
-</td></tr>
+<!-- FILA 5 -->
+<tr>
+<td>Yoga</td>
+<td>1h</td>
 
-<tr><td>Aquagym</td><td>45 min</td><td>
+<td>
 <button class="btn join" onclick="apuntar()">Apuntar-se</button>
-<span class="admin-only"><button class="btn add">➕</button><button class="btn edit">✏️</button><button class="btn delete">🗑️</button></span>
-</td></tr>
+</td>
 
-<tr><td>Zumba</td><td>1h</td><td>
-<button class="btn join" onclick="apuntar()">Apuntar-se</button>
-<span class="admin-only"><button class="btn add">➕</button><button class="btn edit">✏️</button><button class="btn delete">🗑️</button></span>
-</td></tr>
+<?php if($_SESSION['rol'] == 'admin'): ?>
+<td>
+<button class="btn add">➕</button>
+<button class="btn edit">✏️</button>
+<button class="btn delete">🗑️</button>
+</td>
+<?php endif; ?>
 
-<tr><td>Step</td><td>45 min</td><td>
+</tr>
+
+<!-- FILA 6 -->
+<tr>
+<td>BodyCombat</td>
+<td>1h</td>
+
+<td>
 <button class="btn join" onclick="apuntar()">Apuntar-se</button>
-<span class="admin-only"><button class="btn add">➕</button><button class="btn edit">✏️</button><button class="btn delete">🗑️</button></span>
-</td></tr>
+</td>
+
+<?php if($_SESSION['rol'] == 'admin'): ?>
+<td>
+<button class="btn add">➕</button>
+<button class="btn edit">✏️</button>
+<button class="btn delete">🗑️</button>
+</td>
+<?php endif; ?>
+</tr>
+
+<!-- FILA 7 -->
+<tr>
+<td>Boxa</td>
+<td>1h</td>
+
+<td>
+<button class="btn join" onclick="apuntar()">Apuntar-se</button>
+</td>
+
+<?php if($_SESSION['rol'] == 'admin'): ?>
+<td>
+<button class="btn add">➕</button>
+<button class="btn edit">✏️</button>
+<button class="btn delete">🗑️</button>
+</td>
+<?php endif; ?>
+</tr>
+
+<!-- FILA 8 -->
+<tr>
+<td>HBX Boxing</td>
+<td>1h</td>
+
+<td>
+<button class="btn join" onclick="apuntar()">Apuntar-se</button>
+</td>
+
+<?php if($_SESSION['rol'] == 'admin'): ?>
+<td>
+<button class="btn add">➕</button>
+<button class="btn edit">✏️</button>
+<button class="btn delete">🗑️</button>
+</td>
+<?php endif; ?>
+</tr>
+
+<!-- FILA 9 -->
+<tr>
+<td>Ciclo indoor</td>
+<td>45min</td>
+
+<td>
+<button class="btn join" onclick="apuntar()">Apuntar-se</button>
+</td>
+
+<?php if($_SESSION['rol'] == 'admin'): ?>
+<td>
+<button class="btn add">➕</button>
+<button class="btn edit">✏️</button>
+<button class="btn delete">🗑️</button>
+</td>
+<?php endif; ?>
+</tr>
+
+<!-- FILA 10 -->
+<tr>
+<td>Ciclo Virtual</td>
+<td>45min</td>
+
+<td>
+<button class="btn join" onclick="apuntar()">Apuntar-se</button>
+</td>
+
+<?php if($_SESSION['rol'] == 'admin'): ?>
+<td>
+<button class="btn add">➕</button>
+<button class="btn edit">✏️</button>
+<button class="btn delete">🗑️</button>
+</td>
+<?php endif; ?>
+</tr>
+
+<!-- FILA 11 -->
+<tr>
+<td>BodyPump Virtual</td>
+<td>1h</td>
+
+<td>
+<button class="btn join" onclick="apuntar()">Apuntar-se</button>
+</td>
+
+<?php if($_SESSION['rol'] == 'admin'): ?>
+<td>
+<button class="btn add">➕</button>
+<button class="btn edit">✏️</button>
+<button class="btn delete">🗑️</button>
+</td>
+<?php endif; ?>
+</tr>
+
+<!-- FILA 12 -->
+<tr>
+<td>Core Virtual</td>
+<td>30min</td>
+
+<td>
+<button class="btn join" onclick="apuntar()">Apuntar-se</button>
+</td>
+
+<?php if($_SESSION['rol'] == 'admin'): ?>
+<td>
+<button class="btn add">➕</button>
+<button class="btn edit">✏️</button>
+<button class="btn delete">🗑️</button>
+</td>
+<?php endif; ?>
+</tr>
+
+<!-- FILA 13 -->
+<tr>
+<td>Aguagym</td>
+<td>45min</td>
+
+<td>
+<button class="btn join" onclick="apuntar()">Apuntar-se</button>
+</td>
+
+<?php if($_SESSION['rol'] == 'admin'): ?>
+<td>
+<button class="btn add">➕</button>
+<button class="btn edit">✏️</button>
+<button class="btn delete">🗑️</button>
+</td>
+<?php endif; ?>
+</tr>
+
+<!-- FILA 14 -->
+<tr>
+<td>Zumba</td>
+<td>1h</td>
+
+<td>
+<button class="btn join" onclick="apuntar()">Apuntar-se</button>
+</td>
+
+<?php if($_SESSION['rol'] == 'admin'): ?>
+<td>
+<button class="btn add">➕</button>
+<button class="btn edit">✏️</button>
+<button class="btn delete">🗑️</button>
+</td>
+<?php endif; ?>
+</tr>
+
+<!-- FILA 15 -->
+<tr>
+<td>Step</td>
+<td>45min</td>
+
+<td>
+<button class="btn join" onclick="apuntar()">Apuntar-se</button>
+</td>
+
+<?php if($_SESSION['rol'] == 'admin'): ?>
+<td>
+<button class="btn add">➕</button>
+<button class="btn edit">✏️</button>
+<button class="btn delete">🗑️</button>
+</td>
+<?php endif; ?>
+</tr>
 
 </table>
+
 
 </div>
 
