@@ -1,6 +1,7 @@
 <?php
 
 require_once 'config.php';
+
 session_start();
 
 if($_SERVER['REQUEST_METHOD']=="POST"){
@@ -121,8 +122,8 @@ a:hover{
 <h2>Inicia sessió</h2>
 
 <form method="POST" action="login.php">
-<input type="text" placeholder="Nom d'usuari" required>
-<input type="password" placeholder="Contrasenya" required>
+<input type="text" name="nom_usuari" placeholder="Nom d'usuari" required>
+<input type="password" name="contrasenya" placeholder="Contrasenya" required>
 
 <button type="submit">Entrar</button>
 </form>
@@ -130,16 +131,6 @@ a:hover{
 <a href="index.html">← Tornar a la pàgina principal</a>
 
 </div>
-
-<script>
-function login(e){
-    e.preventDefault();
-
-    // Simulació login
-    alert("Login correcte!");
-    window.location.href = "dashboard.html";
-}
-</script>
 
 </body>
 </html>

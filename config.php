@@ -10,7 +10,7 @@ try {
             PDO::ATTR_EMULATE_PREPARES => false
         ]
     );
-    echo "Connexió exitosa";
+
  } catch (PDOException $e) {
     error_log("Error de connexió: " . $e->getMessage());
     die("No s'ha pogut connectar a la base de dades");
