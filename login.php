@@ -18,7 +18,7 @@ if($usuari && password_verify($contrasenya,$usuari['contrasenya'])){
 
 session_regenerate_id(true);
 
-$_SESSION['usuari_id']=$usuari['id'];
+$_SESSION['usuari_id']=$usuari['id_usuari'];
 $_SESSION['nom_usuari']=$usuari['nom_usuari'];
 $_SESSION['rol']=$usuari['rol'];
 
