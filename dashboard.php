@@ -1,16 +1,49 @@
 <?php
 // dashboard.php
-session_start();
+require_once 'auth.php';
+requireLogin();
 
-if (!isset($_SESSION['usuari_id'])) {
-    header('Location: login.php');
-    exit;
-}
-
-require_once 'config.php'; // <- dona $pdo com a variable global
+require_once 'config.php';
 
 $user_id   = $_SESSION['usuari_id'];
 $user_name = $_SESSION['nom_usuari'] ?? 'Usuari';
+$is_admin  = teRol('admin');
+
+// --- CREATE: Nova classe (només admin) ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accio']) && $_POST['accio'] === 'nova_classe') {
+    if (!$is_admin) {
+        header('Location: dashboard.php');
+        exit;
+    }
+
+    $nc_nom       = trim($_POST['nc_nom']       ?? '');
+    $nc_tecnic    = trim($_POST['nc_tecnic']    ?? '') ?: null;
+    $nc_categoria = trim($_POST['nc_categoria'] ?? '');
+    $nc_intensitat= trim($_POST['nc_intensitat']?? '');
+    $nc_durada    = (int)($_POST['nc_durada']   ?? 0);
+    $nc_places    = (int)($_POST['nc_places']   ?? 0);
+    $nc_estudi    = trim($_POST['nc_estudi']    ?? '');
+    $nc_horari    = trim($_POST['nc_horari']    ?? '');
+
+    $categories_ok  = ['Força','Cardiovascular','Cos i ment','Virtual','Aquàtica'];
+    $intensitats_ok = ['Baixa','Mitjana','Alta'];
+    $estudis_ok     = ['Estudi 1','Estudi 2','Estudi 3','Piscina'];
+
+    if ($nc_nom && in_array($nc_categoria, $categories_ok) && in_array($nc_intensitat, $intensitats_ok)
+        && $nc_durada > 0 && $nc_places > 0 && in_array($nc_estudi, $estudis_ok) && $nc_horari) {
+
+        $stmt = $pdo->prepare(
+            "INSERT INTO classes (nom, `nom_tècnic`, durada, categoria, intensitat, estudi, horari, places)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        );
+        $stmt->execute([$nc_nom, $nc_tecnic, $nc_durada, $nc_categoria, $nc_intensitat, $nc_estudi, $nc_horari, $nc_places]);
+        $missatge       = "Classe \"$nc_nom\" creada correctament!";
+        $missatge_tipus = 'success';
+    } else {
+        $missatge       = 'Error: dades incorrectes. Revisa tots els camps obligatoris.';
+        $missatge_tipus = 'error';
+    }
+}
 
 // --- CREATE: Inscripció a una classe ---
 $missatge       = '';
@@ -165,7 +198,8 @@ $icones_categoria = [
             transition: all .2s;
         }
         .btn-nav:hover        { border-color: var(--accent); color: var(--accent); }
-        .btn-nav.logout:hover { border-color: var(--red);    color: var(--red);    }
+        .btn-nav.logout       { border-color: var(--red); background: var(--red); color: #fff; }
+        .btn-nav.logout:hover { background: #c53030; border-color: #c53030; color: #fff; }
         .btn-nav.admin        { border-color: var(--accent); color: var(--accent); }
 
         /* LAYOUT */
@@ -204,6 +238,7 @@ $icones_categoria = [
         }
         .feedback.success { background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.3); color: var(--green); }
         .feedback.warning { background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.3); color: var(--amber); }
+        .feedback.error   { background: rgba(239,68,68,.12);  border: 1px solid rgba(239,68,68,.3);  color: var(--red);  }
 
         /* STATS */
         .stats-row {
@@ -400,9 +435,219 @@ $icones_categoria = [
             .main-wrap { padding: 1.5rem 1rem 3rem; }
             .classes-grid { grid-template-columns: 1fr; }
         }
+
+        /* ── ADMIN ───────────────────────────────────────── */
+        body.is-admin { --accent: #ff6b35; --accent-dim: #cc5529; }
+        body.is-admin .topbar { border-bottom-color: rgba(255,107,53,.4); }
+
+        .admin-banner {
+            background: linear-gradient(90deg, rgba(255,107,53,.12), rgba(255,107,53,.05));
+            border-bottom: 1px solid rgba(255,107,53,.3);
+            padding: .6rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .admin-banner-left {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            font-size: .85rem;
+            color: #ff6b35;
+            font-weight: 600;
+        }
+        .admin-banner-right { display: flex; gap: .6rem; }
+
+        .btn-admin-action {
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+            padding: .4rem 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255,107,53,.4);
+            background: rgba(255,107,53,.1);
+            color: #ff6b35;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .82rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all .2s;
+        }
+        .btn-admin-action:hover {
+            background: rgba(255,107,53,.2);
+            border-color: #ff6b35;
+        }
+
+        .btn-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 7px;
+            border: 1px solid var(--border);
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: .85rem;
+            transition: all .2s;
+            text-decoration: none;
+        }
+        .btn-icon-edit:hover  { border-color: var(--amber); background: rgba(245,158,11,.1); }
+        .btn-icon-delete:hover{ border-color: var(--red);   background: rgba(239,68,68,.1);  }
+
+        .topbar-admin-badge {
+            background: rgba(255,107,53,.15);
+            border: 1px solid rgba(255,107,53,.4);
+            color: #ff6b35;
+            border-radius: 100px;
+            font-size: .72rem;
+            font-weight: 700;
+            padding: .2rem .7rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        /* ── MODAL NOVA CLASSE ───────────────────────────── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.75);
+            backdrop-filter: blur(6px);
+            z-index: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .25s;
+        }
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .modal {
+            background: #16161f;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 560px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: translateY(20px) scale(.97);
+            transition: transform .25s;
+            box-shadow: 0 24px 60px rgba(0,0,0,.6);
+        }
+        .modal-overlay.open .modal {
+            transform: translateY(0) scale(1);
+        }
+        .modal-head {
+            padding: 1.4rem 1.6rem 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .modal-head h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.4rem;
+            letter-spacing: 1.5px;
+            color: var(--text);
+        }
+        .modal-close {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all .2s;
+        }
+        .modal-close:hover { border-color: var(--red); color: var(--red); }
+
+        .modal-body { padding: 1.4rem 1.6rem; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .form-group { display: flex; flex-direction: column; gap: .4rem; }
+        .form-group.full { grid-column: 1 / -1; }
+
+        .form-label {
+            font-size: .78rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .form-input,
+        .form-select {
+            background: var(--bg-card2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: .65rem .9rem;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: .9rem;
+            transition: border-color .2s;
+            width: 100%;
+        }
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: #ff6b35;
+        }
+        .form-select option { background: #16161f; }
+
+        .modal-footer {
+            padding: 1rem 1.6rem 1.4rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: .7rem;
+            justify-content: flex-end;
+        }
+        .btn-cancel {
+            padding: .55rem 1.2rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            font-family: 'DM Sans', sans-serif;
+            font-size: .9rem;
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .btn-cancel:hover { border-color: var(--red); color: var(--red); }
+
+        .btn-submit {
+            padding: .55rem 1.4rem;
+            border-radius: 8px;
+            border: none;
+            background: #ff6b35;
+            color: #fff;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 700;
+            font-size: .9rem;
+            cursor: pointer;
+            transition: background .2s, transform .15s;
+        }
+        .btn-submit:hover { background: #cc5529; transform: scale(1.02); }
+        .btn-submit:disabled { opacity: .5; cursor: default; transform: none; }
+
+        .form-error {
+            font-size: .78rem;
+            color: var(--red);
+            display: none;
+        }
     </style>
 </head>
-<body>
+<body class="<?= $is_admin ? 'is-admin' : '' ?>">
 
 <!-- TOPBAR -->
 <nav class="topbar">
@@ -412,25 +657,44 @@ $icones_categoria = [
             <div class="avatar"><?= strtoupper(substr($user_name, 0, 1)) ?></div>
             Benvingut, <span><?= htmlspecialchars($user_name) ?></span>
         </div>
-        <?php if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'admin'): ?>
-            <a href="admin.php" class="btn-nav admin">Admin</a>
+        <?php if ($is_admin): ?>
+            <span class="topbar-admin-badge">Admin</span>
         <?php endif; ?>
-        <a href="logout.php" class="btn-nav logout">Sortir</a>
+        <a href="logout.php" class="btn-nav logout">Tancar sessió</a>
     </div>
 </nav>
+
+<?php if ($is_admin): ?>
+<!-- BANNER ADMIN -->
+<div class="admin-banner">
+    <div class="admin-banner-left">
+        🛠️ Mode administrador — tens accés a la gestió de classes i usuaris
+    </div>
+    <div class="admin-banner-right">
+        <a href="usuaris/usuaris.php" class="btn-admin-action">👥 Gestionar usuaris</a>
+        <button onclick="obrirModal()" class="btn-admin-action">➕ Nova classe</button>
+    </div>
+</div>
+<?php endif; ?>
 
 <div class="main-wrap">
 
     <!-- HEADER -->
     <div class="dash-header">
         <h1>Les teves <em>classes</em></h1>
-        <p>Inscriu-te a les classes que vulguis i consulta la fitxa tècnica de cada una.</p>
+        <p>
+            <?php if ($is_admin): ?>
+                Com a administrador pots afegir, editar i eliminar classes des de cada targeta.
+            <?php else: ?>
+                Inscriu-te a les classes que vulguis i consulta la fitxa tècnica de cada una.
+            <?php endif; ?>
+        </p>
     </div>
 
     <!-- FEEDBACK -->
     <?php if ($missatge): ?>
     <div class="feedback <?= $missatge_tipus ?>">
-        <?= $missatge_tipus === 'success' ? '✅' : '⚠️' ?>
+        <?= $missatge_tipus === 'success' ? '✅' : ($missatge_tipus === 'warning' ? '⚠️' : '❌') ?>
         <?= htmlspecialchars($missatge) ?>
     </div>
     <?php endif; ?>
@@ -505,7 +769,14 @@ $icones_categoria = [
                         Horari <strong><?= htmlspecialchars($classe['horari']) ?></strong>
                     </div>
                     <div class="card-actions">
-                        <a href="classes/clases.php?id=<?= (int)$classe['id_classe'] ?>" class="btn-ficha">
+                        <?php if ($is_admin): ?>
+                            <a href="classes/editar_classe.php?id=<?= (int)$classe['id_classe'] ?>"
+                               class="btn-icon btn-icon-edit" title="Editar classe">✏️</a>
+                            <a href="classes/eliminar_classe.php?id=<?= (int)$classe['id_classe'] ?>"
+                               class="btn-icon btn-icon-delete" title="Eliminar classe">🗑️</a>
+                        <?php endif; ?>
+
+                        <a href="classes/classes.php?id=<?= (int)$classe['id_classe'] ?>" class="btn-ficha">
                             Fitxa →
                         </a>
 
@@ -531,7 +802,116 @@ $icones_categoria = [
 
 </div>
 
+<?php if ($is_admin): ?>
+<!-- ═══════════════════════════════════════════════
+     MODAL: NOVA CLASSE
+════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalOverlay" onclick="tancarModalFora(event)">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitol">
+
+        <div class="modal-head">
+            <h2 id="modalTitol">➕ Nova Classe</h2>
+            <button class="modal-close" onclick="tancarModal()" aria-label="Tancar">✕</button>
+        </div>
+
+        <form method="POST" id="formNovaClasse" novalidate>
+            <input type="hidden" name="accio" value="nova_classe">
+
+            <div class="modal-body">
+                <div class="form-grid">
+
+                    <!-- Nom -->
+                    <div class="form-group full">
+                        <label class="form-label" for="nc_nom">Nom de la classe *</label>
+                        <input class="form-input" type="text" id="nc_nom" name="nc_nom"
+                               placeholder="Ex: BodyPump, Yoga, Zumba..." required>
+                        <span class="form-error" id="err_nom">El nom és obligatori.</span>
+                    </div>
+
+                    <!-- Tècnic -->
+                    <div class="form-group full">
+                        <label class="form-label" for="nc_tecnic">Nom del tècnic</label>
+                        <input class="form-input" type="text" id="nc_tecnic" name="nc_tecnic"
+                               placeholder="Deixa buit si és classe virtual">
+                    </div>
+
+                    <!-- Categoria -->
+                    <div class="form-group">
+                        <label class="form-label" for="nc_categoria">Categoria *</label>
+                        <select class="form-select" id="nc_categoria" name="nc_categoria" required>
+                            <option value="">— Selecciona —</option>
+                            <option value="Força">🏋️ Força</option>
+                            <option value="Cardiovascular">🏃 Cardiovascular</option>
+                            <option value="Cos i ment">🧘 Cos i ment</option>
+                            <option value="Virtual">💻 Virtual</option>
+                            <option value="Aquàtica">🏊 Aquàtica</option>
+                        </select>
+                        <span class="form-error" id="err_categoria">Selecciona una categoria.</span>
+                    </div>
+
+                    <!-- Intensitat -->
+                    <div class="form-group">
+                        <label class="form-label" for="nc_intensitat">Intensitat *</label>
+                        <select class="form-select" id="nc_intensitat" name="nc_intensitat" required>
+                            <option value="">— Selecciona —</option>
+                            <option value="Baixa">Baixa</option>
+                            <option value="Mitjana">Mitjana</option>
+                            <option value="Alta">Alta</option>
+                        </select>
+                        <span class="form-error" id="err_intensitat">Selecciona la intensitat.</span>
+                    </div>
+
+                    <!-- Durada -->
+                    <div class="form-group">
+                        <label class="form-label" for="nc_durada">Durada (minuts) *</label>
+                        <input class="form-input" type="number" id="nc_durada" name="nc_durada"
+                               min="1" max="180" placeholder="Ex: 60" required>
+                        <span class="form-error" id="err_durada">Introdueix una durada vàlida.</span>
+                    </div>
+
+                    <!-- Places -->
+                    <div class="form-group">
+                        <label class="form-label" for="nc_places">Places *</label>
+                        <input class="form-input" type="number" id="nc_places" name="nc_places"
+                               min="1" max="500" placeholder="Ex: 25" required>
+                        <span class="form-error" id="err_places">Introdueix el nombre de places.</span>
+                    </div>
+
+                    <!-- Estudi -->
+                    <div class="form-group">
+                        <label class="form-label" for="nc_estudi">Estudi / Espai *</label>
+                        <select class="form-select" id="nc_estudi" name="nc_estudi" required>
+                            <option value="">— Selecciona —</option>
+                            <option value="Estudi 1">Estudi 1</option>
+                            <option value="Estudi 2">Estudi 2</option>
+                            <option value="Estudi 3">Estudi 3</option>
+                            <option value="Piscina">Piscina</option>
+                        </select>
+                        <span class="form-error" id="err_estudi">Selecciona un espai.</span>
+                    </div>
+
+                    <!-- Horari -->
+                    <div class="form-group">
+                        <label class="form-label" for="nc_horari">Horari *</label>
+                        <input class="form-input" type="time" id="nc_horari" name="nc_horari" required>
+                        <span class="form-error" id="err_horari">Introdueix l'horari.</span>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="tancarModal()">Cancel·lar</button>
+                <button type="submit" class="btn-submit" id="btnSubmit">Crear classe</button>
+            </div>
+        </form>
+
+    </div>
+</div>
+<?php endif; ?>
+
 <script>
+// ── Filtre de categories ──────────────────────────────
 function filtrar(categoria, btn) {
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
@@ -540,6 +920,7 @@ function filtrar(categoria, btn) {
     });
 }
 
+// ── Feedback auto-ocultar ─────────────────────────────
 const feedback = document.querySelector('.feedback');
 if (feedback) {
     setTimeout(() => {
@@ -548,6 +929,56 @@ if (feedback) {
         setTimeout(() => feedback.remove(), 500);
     }, 4000);
 }
+
+// ── Modal ─────────────────────────────────────────────
+function obrirModal() {
+    document.getElementById('modalOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('nc_nom').focus();
+}
+
+function tancarModal() {
+    document.getElementById('modalOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+function tancarModalFora(e) {
+    if (e.target === document.getElementById('modalOverlay')) tancarModal();
+}
+
+// Tancar amb Escape
+document.addEventListener('keydown', e => { if (e.key === 'Escape') tancarModal(); });
+
+// ── Validació del formulari ───────────────────────────
+document.getElementById('formNovaClasse')?.addEventListener('submit', function(e) {
+    let valid = true;
+
+    const camps = [
+        { id: 'nc_nom',       err: 'err_nom',        check: v => v.trim() !== '' },
+        { id: 'nc_categoria', err: 'err_categoria',   check: v => v !== '' },
+        { id: 'nc_intensitat',err: 'err_intensitat',  check: v => v !== '' },
+        { id: 'nc_durada',    err: 'err_durada',      check: v => v > 0 && v <= 180 },
+        { id: 'nc_places',    err: 'err_places',      check: v => v > 0 && v <= 500 },
+        { id: 'nc_estudi',    err: 'err_estudi',      check: v => v !== '' },
+        { id: 'nc_horari',    err: 'err_horari',      check: v => v !== '' },
+    ];
+
+    camps.forEach(({ id, err, check }) => {
+        const input = document.getElementById(id);
+        const errEl = document.getElementById(err);
+        if (!check(input.value)) {
+            errEl.style.display = 'block';
+            input.style.borderColor = 'var(--red)';
+            valid = false;
+        } else {
+            errEl.style.display = 'none';
+            input.style.borderColor = '';
+        }
+    });
+
+    if (!valid) e.preventDefault();
+    else document.getElementById('btnSubmit').disabled = true;
+});
 </script>
 </body>
 </html>
