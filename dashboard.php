@@ -9,50 +9,161 @@ $user_id   = $_SESSION['usuari_id'];
 $user_name = $_SESSION['nom_usuari'] ?? 'Usuari';
 $is_admin  = teRol('admin');
 
-// --- CREATE: Nova classe (només admin) ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accio']) && $_POST['accio'] === 'nova_classe') {
+// Llistes de valors permesos (font de veritat del servidor)
+$categories_ok  = ['Força', 'Cardiovascular', 'Cos i ment', 'Virtual', 'Aquàtica'];
+$intensitats_ok = ['Baixa', 'Mitjana', 'Alta'];
+$estudis_ok     = ['Estudi 1', 'Estudi 2', 'Estudi 3', 'Piscina'];
+
+// Variables per al formulari (errors de servidor i valors antics)
+$errors_nova = [];
+$old_nova    = [];
+$missatge       = '';
+$missatge_tipus = '';
+
+// =========================================================
+// CREATE: Nova classe (només admin)
+// =========================================================
+if ($_SERVER['REQUEST_METHOD'] === 'POST'
+    && isset($_POST['accio'])
+    && $_POST['accio'] === 'nova_classe'
+) {
+    // Doble comprovació: ha de ser admin fins i tot si manipulen el POST
     if (!$is_admin) {
         header('Location: dashboard.php');
         exit;
     }
 
-    $nc_nom       = trim($_POST['nc_nom']       ?? '');
-    $nc_tecnic    = trim($_POST['nc_tecnic']    ?? '') ?: null;
-    $nc_categoria = trim($_POST['nc_categoria'] ?? '');
-    $nc_intensitat= trim($_POST['nc_intensitat']?? '');
-    $nc_durada    = (int)($_POST['nc_durada']   ?? 0);
-    $nc_places    = (int)($_POST['nc_places']   ?? 0);
-    $nc_estudi    = trim($_POST['nc_estudi']    ?? '');
-    $nc_horari    = trim($_POST['nc_horari']    ?? '');
+    // --- Recollir i sanejar ---
+    $nc_nom        = trim($_POST['nc_nom']        ?? '');
+    $nc_tecnic     = trim($_POST['nc_tecnic']     ?? '');
+    $nc_categoria  = trim($_POST['nc_categoria']  ?? '');
+    $nc_intensitat = trim($_POST['nc_intensitat'] ?? '');
+    $nc_durada_raw = trim($_POST['nc_durada']     ?? '');
+    $nc_places_raw = trim($_POST['nc_places']     ?? '');
+    $nc_estudi     = trim($_POST['nc_estudi']     ?? '');
+    $nc_horari     = trim($_POST['nc_horari']     ?? '');
 
-    $categories_ok  = ['Força','Cardiovascular','Cos i ment','Virtual','Aquàtica'];
-    $intensitats_ok = ['Baixa','Mitjana','Alta'];
-    $estudis_ok     = ['Estudi 1','Estudi 2','Estudi 3','Piscina'];
+    // Guardar per repoblar el modal si hi ha errors
+    $old_nova = [
+        'nc_nom'        => $nc_nom,
+        'nc_tecnic'     => $nc_tecnic,
+        'nc_categoria'  => $nc_categoria,
+        'nc_intensitat' => $nc_intensitat,
+        'nc_durada_raw' => $nc_durada_raw,
+        'nc_places_raw' => $nc_places_raw,
+        'nc_estudi'     => $nc_estudi,
+        'nc_horari'     => $nc_horari,
+    ];
 
-    if ($nc_nom && in_array($nc_categoria, $categories_ok) && in_array($nc_intensitat, $intensitats_ok)
-        && $nc_durada > 0 && $nc_places > 0 && in_array($nc_estudi, $estudis_ok) && $nc_horari) {
+    // --- Validació camp per camp ---
+
+    // NOM: obligatori, mínim 2 caràcters, màxim 100, no pot ser només números ni espais
+    if ($nc_nom === '') {
+        $errors_nova['nc_nom'] = 'El nom de la classe és obligatori.';
+    } elseif (mb_strlen($nc_nom) < 2) {
+        $errors_nova['nc_nom'] = 'El nom ha de tenir almenys 2 caràcters.';
+    } elseif (mb_strlen($nc_nom) > 100) {
+        $errors_nova['nc_nom'] = 'El nom no pot superar els 100 caràcters.';
+    } elseif (is_numeric($nc_nom)) {
+        $errors_nova['nc_nom'] = 'El nom no pot ser només números.';
+    }
+
+    // TÈCNIC: opcional, però si s'omple ha de ser text vàlid
+    if ($nc_tecnic !== '') {
+        if (mb_strlen($nc_tecnic) < 2) {
+            $errors_nova['nc_tecnic'] = 'El nom del tècnic ha de tenir almenys 2 caràcters.';
+        } elseif (mb_strlen($nc_tecnic) > 100) {
+            $errors_nova['nc_tecnic'] = 'El nom del tècnic no pot superar els 100 caràcters.';
+        } elseif (is_numeric($nc_tecnic)) {
+            $errors_nova['nc_tecnic'] = 'El nom del tècnic no pot ser només números.';
+        }
+    }
+
+    // CATEGORIA: ha de ser exactament un valor de la llista blanca
+    if ($nc_categoria === '') {
+        $errors_nova['nc_categoria'] = 'Has de seleccionar una categoria.';
+    } elseif (!in_array($nc_categoria, $categories_ok, true)) {
+        $errors_nova['nc_categoria'] = 'La categoria seleccionada no és vàlida.';
+    }
+
+    // INTENSITAT: ha de ser exactament un valor de la llista blanca
+    if ($nc_intensitat === '') {
+        $errors_nova['nc_intensitat'] = 'Has de seleccionar la intensitat.';
+    } elseif (!in_array($nc_intensitat, $intensitats_ok, true)) {
+        $errors_nova['nc_intensitat'] = 'La intensitat seleccionada no és vàlida.';
+    }
+
+    // DURADA: obligatòria, ha de ser un enter positiu entre 1 i 180
+    if ($nc_durada_raw === '') {
+        $errors_nova['nc_durada'] = 'La durada és obligatòria.';
+    } elseif (!ctype_digit($nc_durada_raw)) {
+        $errors_nova['nc_durada'] = 'La durada ha de ser un número enter positiu (sense decimals ni símbols).';
+    } elseif ((int)$nc_durada_raw < 1) {
+        $errors_nova['nc_durada'] = 'La durada ha de ser com a mínim 1 minut.';
+    } elseif ((int)$nc_durada_raw > 180) {
+        $errors_nova['nc_durada'] = 'La durada no pot superar els 180 minuts.';
+    }
+
+    // PLACES: obligatòries, ha de ser un enter positiu entre 1 i 500
+    if ($nc_places_raw === '') {
+        $errors_nova['nc_places'] = 'El nombre de places és obligatori.';
+    } elseif (!ctype_digit($nc_places_raw)) {
+        $errors_nova['nc_places'] = 'Les places han de ser un número enter positiu (sense decimals ni símbols).';
+    } elseif ((int)$nc_places_raw < 1) {
+        $errors_nova['nc_places'] = 'Ha d\'haver-hi almenys 1 plaça.';
+    } elseif ((int)$nc_places_raw > 500) {
+        $errors_nova['nc_places'] = 'No es poden superar les 500 places.';
+    }
+
+    // ESTUDI: ha de ser exactament un valor de la llista blanca
+    if ($nc_estudi === '') {
+        $errors_nova['nc_estudi'] = 'Has de seleccionar un espai.';
+    } elseif (!in_array($nc_estudi, $estudis_ok, true)) {
+        $errors_nova['nc_estudi'] = 'L\'espai seleccionat no és vàlid.';
+    }
+
+    // HORARI: obligatori, format HH:MM, hora vàlida real
+    if ($nc_horari === '') {
+        $errors_nova['nc_horari'] = 'L\'horari és obligatori.';
+    } elseif (!preg_match('/^\d{2}:\d{2}$/', $nc_horari)) {
+        $errors_nova['nc_horari'] = 'L\'horari ha de tenir el format HH:MM.';
+    } else {
+        [$h, $m] = explode(':', $nc_horari);
+        if ((int)$h > 23 || (int)$m > 59) {
+            $errors_nova['nc_horari'] = 'L\'horari introduït no és una hora real vàlida.';
+        }
+    }
+
+    // --- Insertar NOMÉS si no hi ha cap error ---
+    if (empty($errors_nova)) {
+        $nc_tecnic_db = $nc_tecnic !== '' ? $nc_tecnic : null;
+        $nc_durada    = (int)$nc_durada_raw;
+        $nc_places    = (int)$nc_places_raw;
 
         $stmt = $pdo->prepare(
             "INSERT INTO classes (nom, `nom_tècnic`, durada, categoria, intensitat, estudi, horari, places)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         );
-        $stmt->execute([$nc_nom, $nc_tecnic, $nc_durada, $nc_categoria, $nc_intensitat, $nc_estudi, $nc_horari, $nc_places]);
-        $missatge       = "Classe \"$nc_nom\" creada correctament!";
+        $stmt->execute([
+            $nc_nom, $nc_tecnic_db, $nc_durada,
+            $nc_categoria, $nc_intensitat, $nc_estudi, $nc_horari, $nc_places
+        ]);
+
+        $missatge       = 'Classe "' . htmlspecialchars($nc_nom) . '" creada correctament!';
         $missatge_tipus = 'success';
+        $old_nova       = []; // netejar formulari
     } else {
-        $missatge       = 'Error: dades incorrectes. Revisa tots els camps obligatoris.';
+        $missatge       = 'Corregeix els errors marcats al formulari.';
         $missatge_tipus = 'error';
     }
 }
 
-// --- CREATE: Inscripció a una classe ---
-$missatge       = '';
-$missatge_tipus = '';
-
+// =========================================================
+// CREATE: Inscripció a una classe
+// =========================================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['inscriure'], $_POST['id_classe'])) {
     $id_classe = (int) $_POST['id_classe'];
 
-    // Comprovar si ja està inscrit
     $stmt = $pdo->prepare("SELECT id_reserva FROM reserves WHERE usuari_id = ? AND classe_id = ?");
     $stmt->execute([$user_id, $id_classe]);
 
@@ -69,9 +180,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['inscriure'], $_POST['
     }
 }
 
-// --- READ: Totes les classes agrupades per categoria ---
+// =========================================================
+// READ: Totes les classes agrupades per categoria
+// =========================================================
 $stmt = $pdo->query(
-    "SELECT id_classe, nom, nom_tècnic, durada, categoria, intensitat, estudi, horari, places
+    "SELECT id_classe, nom, `nom_tècnic`, durada, categoria, intensitat, estudi, horari, places
      FROM classes
      ORDER BY categoria, horari"
 );
@@ -82,7 +195,7 @@ foreach ($totes_classes as $classe) {
     $classes_per_categoria[$classe['categoria']][] = $classe;
 }
 
-// --- READ: Inscripcions de l'usuari ---
+// READ: Inscripcions de l'usuari actual
 $stmt = $pdo->prepare("SELECT classe_id FROM reserves WHERE usuari_id = ?");
 $stmt->execute([$user_id]);
 $inscripcions_usuari = array_column($stmt->fetchAll(), 'classe_id');
@@ -200,7 +313,6 @@ $icones_categoria = [
         .btn-nav:hover        { border-color: var(--accent); color: var(--accent); }
         .btn-nav.logout       { border-color: var(--red); background: var(--red); color: #fff; }
         .btn-nav.logout:hover { background: #c53030; border-color: #c53030; color: #fff; }
-        .btn-nav.admin        { border-color: var(--accent); color: var(--accent); }
 
         /* LAYOUT */
         .main-wrap {
@@ -211,7 +323,6 @@ $icones_categoria = [
 
         /* HEADER */
         .dash-header { margin-bottom: 2.5rem; }
-
         .dash-header h1 {
             font-family: 'Bebas Neue', sans-serif;
             font-size: clamp(2.2rem, 5vw, 4rem);
@@ -236,9 +347,9 @@ $icones_categoria = [
             from { opacity: 0; transform: translateY(-10px); }
             to   { opacity: 1; transform: translateY(0); }
         }
-        .feedback.success { background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.3); color: var(--green); }
+        .feedback.success { background: rgba(34,197,94,.12);  border: 1px solid rgba(34,197,94,.3);  color: var(--green); }
         .feedback.warning { background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.3); color: var(--amber); }
-        .feedback.error   { background: rgba(239,68,68,.12);  border: 1px solid rgba(239,68,68,.3);  color: var(--red);  }
+        .feedback.error   { background: rgba(239,68,68,.12);  border: 1px solid rgba(239,68,68,.3);  color: var(--red);   }
 
         /* STATS */
         .stats-row {
@@ -247,7 +358,6 @@ $icones_categoria = [
             gap: 1rem;
             margin-bottom: 2.5rem;
         }
-
         .stat-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
@@ -296,7 +406,6 @@ $icones_categoria = [
 
         /* SECCIONS */
         .categoria-section { margin-bottom: 3rem; }
-
         .categoria-header {
             display: flex;
             align-items: center;
@@ -436,7 +545,7 @@ $icones_categoria = [
             .classes-grid { grid-template-columns: 1fr; }
         }
 
-        /* ── ADMIN ───────────────────────────────────────── */
+        /* ── ADMIN ─────────────────────────────────────── */
         body.is-admin { --accent: #ff6b35; --accent-dim: #cc5529; }
         body.is-admin .topbar { border-bottom-color: rgba(255,107,53,.4); }
 
@@ -495,8 +604,8 @@ $icones_categoria = [
             transition: all .2s;
             text-decoration: none;
         }
-        .btn-icon-edit:hover  { border-color: var(--amber); background: rgba(245,158,11,.1); }
-        .btn-icon-delete:hover{ border-color: var(--red);   background: rgba(239,68,68,.1);  }
+        .btn-icon-edit:hover   { border-color: var(--amber); background: rgba(245,158,11,.1); }
+        .btn-icon-delete:hover { border-color: var(--red);   background: rgba(239,68,68,.1);  }
 
         .topbar-admin-badge {
             background: rgba(255,107,53,.15);
@@ -509,7 +618,8 @@ $icones_categoria = [
             letter-spacing: 1px;
             text-transform: uppercase;
         }
-        /* ── MODAL NOVA CLASSE ───────────────────────────── */
+
+        /* ── MODAL NOVA CLASSE ─────────────────────────── */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -524,10 +634,8 @@ $icones_categoria = [
             pointer-events: none;
             transition: opacity .25s;
         }
-        .modal-overlay.open {
-            opacity: 1;
-            pointer-events: all;
-        }
+        .modal-overlay.open { opacity: 1; pointer-events: all; }
+
         .modal {
             background: #16161f;
             border: 1px solid var(--border);
@@ -540,9 +648,8 @@ $icones_categoria = [
             transition: transform .25s;
             box-shadow: 0 24px 60px rgba(0,0,0,.6);
         }
-        .modal-overlay.open .modal {
-            transform: translateY(0) scale(1);
-        }
+        .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+
         .modal-head {
             padding: 1.4rem 1.6rem 1rem;
             border-bottom: 1px solid var(--border);
@@ -586,6 +693,15 @@ $icones_categoria = [
             color: var(--text-muted);
             font-weight: 600;
         }
+        .form-label small {
+            font-size: .72rem;
+            text-transform: none;
+            letter-spacing: 0;
+            color: var(--text-muted);
+            opacity: .7;
+            font-weight: 400;
+        }
+
         .form-input,
         .form-select {
             background: var(--bg-card2);
@@ -599,11 +715,27 @@ $icones_categoria = [
             width: 100%;
         }
         .form-input:focus,
-        .form-select:focus {
-            outline: none;
-            border-color: #ff6b35;
-        }
+        .form-select:focus { outline: none; border-color: #ff6b35; }
         .form-select option { background: #16161f; }
+
+        /* Estat error del camp */
+        .input-error { border-color: var(--red) !important; background: rgba(239,68,68,.05) !important; }
+
+        /* Missatge d'error per camp (servidor) */
+        .form-error-server {
+            font-size: .78rem;
+            color: var(--red);
+            display: block;
+            margin-top: .1rem;
+        }
+
+        /* Missatge d'error JS (ocult per defecte) */
+        .form-error-js {
+            font-size: .78rem;
+            color: var(--red);
+            display: none;
+            margin-top: .1rem;
+        }
 
         .modal-footer {
             padding: 1rem 1.6rem 1.4rem;
@@ -639,12 +771,6 @@ $icones_categoria = [
         }
         .btn-submit:hover { background: #cc5529; transform: scale(1.02); }
         .btn-submit:disabled { opacity: .5; cursor: default; transform: none; }
-
-        .form-error {
-            font-size: .78rem;
-            color: var(--red);
-            display: none;
-        }
     </style>
 </head>
 <body class="<?= $is_admin ? 'is-admin' : '' ?>">
@@ -665,7 +791,6 @@ $icones_categoria = [
 </nav>
 
 <?php if ($is_admin): ?>
-<!-- BANNER ADMIN -->
 <div class="admin-banner">
     <div class="admin-banner-left">
         🛠️ Mode administrador — tens accés a la gestió de classes i usuaris
@@ -679,7 +804,6 @@ $icones_categoria = [
 
 <div class="main-wrap">
 
-    <!-- HEADER -->
     <div class="dash-header">
         <h1>Les teves <em>classes</em></h1>
         <p>
@@ -691,7 +815,6 @@ $icones_categoria = [
         </p>
     </div>
 
-    <!-- FEEDBACK -->
     <?php if ($missatge): ?>
     <div class="feedback <?= $missatge_tipus ?>">
         <?= $missatge_tipus === 'success' ? '✅' : ($missatge_tipus === 'warning' ? '⚠️' : '❌') ?>
@@ -699,7 +822,6 @@ $icones_categoria = [
     </div>
     <?php endif; ?>
 
-    <!-- STATS -->
     <div class="stats-row">
         <div class="stat-card">
             <div class="stat-label">Total classes</div>
@@ -715,7 +837,6 @@ $icones_categoria = [
         </div>
     </div>
 
-    <!-- FILTRES -->
     <div class="filter-row">
         <button class="filter-btn active" onclick="filtrar('tots', this)">Totes</button>
         <?php foreach (array_keys($classes_per_categoria) as $cat): ?>
@@ -725,10 +846,8 @@ $icones_categoria = [
         <?php endforeach; ?>
     </div>
 
-    <!-- CLASSES PER CATEGORIA -->
     <?php foreach ($classes_per_categoria as $categoria => $classes): ?>
     <section class="categoria-section" data-categoria="<?= htmlspecialchars($categoria) ?>">
-
         <div class="categoria-header">
             <span><?= $icones_categoria[$categoria] ?? '🏅' ?></span>
             <h2><?= htmlspecialchars($categoria) ?></h2>
@@ -744,15 +863,12 @@ $icones_categoria = [
                     <?php if ($inscrit): ?>
                         <span class="card-badge-inscrit">✓ Inscrit</span>
                     <?php endif; ?>
-
                     <div class="card-nom"><?= htmlspecialchars($classe['nom']) ?></div>
-
                     <div class="card-tecnic">
                         Tècnic: <span>
                             <?= $classe['nom_tècnic'] ? htmlspecialchars($classe['nom_tècnic']) : 'Virtual' ?>
                         </span>
                     </div>
-
                     <div class="card-pills">
                         <span class="pill">⏱ <?= (int)$classe['durada'] ?> min</span>
                         <span class="pill">📍 <?= htmlspecialchars($classe['estudi']) ?></span>
@@ -775,11 +891,9 @@ $icones_categoria = [
                             <a href="classes/eliminar_classe.php?id=<?= (int)$classe['id_classe'] ?>"
                                class="btn-icon btn-icon-delete" title="Eliminar classe">🗑️</a>
                         <?php endif; ?>
-
                         <a href="classes/classes.php?id=<?= (int)$classe['id_classe'] ?>" class="btn-ficha">
                             Fitxa →
                         </a>
-
                         <?php if ($inscrit): ?>
                             <span class="btn-ja-inscrit">✓ Inscrit</span>
                         <?php else: ?>
@@ -796,16 +910,13 @@ $icones_categoria = [
             </div>
             <?php endforeach; ?>
         </div>
-
     </section>
     <?php endforeach; ?>
 
 </div>
 
 <?php if ($is_admin): ?>
-<!-- ═══════════════════════════════════════════════
-     MODAL: NOVA CLASSE
-════════════════════════════════════════════════ -->
+<!-- MODAL: NOVA CLASSE -->
 <div class="modal-overlay" id="modalOverlay" onclick="tancarModalFora(event)">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitol">
 
@@ -816,85 +927,135 @@ $icones_categoria = [
 
         <form method="POST" id="formNovaClasse" novalidate>
             <input type="hidden" name="accio" value="nova_classe">
-
             <div class="modal-body">
                 <div class="form-grid">
 
                     <!-- Nom -->
                     <div class="form-group full">
                         <label class="form-label" for="nc_nom">Nom de la classe *</label>
-                        <input class="form-input" type="text" id="nc_nom" name="nc_nom"
-                               placeholder="Ex: BodyPump, Yoga, Zumba..." required>
-                        <span class="form-error" id="err_nom">El nom és obligatori.</span>
+                        <input class="form-input <?= isset($errors_nova['nc_nom']) ? 'input-error' : '' ?>"
+                               type="text" id="nc_nom" name="nc_nom"
+                               placeholder="Ex: BodyPump, Yoga, Zumba..."
+                               maxlength="100"
+                               value="<?= htmlspecialchars($old_nova['nc_nom'] ?? '') ?>">
+                        <?php if (isset($errors_nova['nc_nom'])): ?>
+                            <span class="form-error-server">⚠ <?= htmlspecialchars($errors_nova['nc_nom']) ?></span>
+                        <?php else: ?>
+                            <span class="form-error-js" id="js_err_nom">El nom és obligatori (mínim 2 caràcters).</span>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Tècnic -->
                     <div class="form-group full">
-                        <label class="form-label" for="nc_tecnic">Nom del tècnic</label>
-                        <input class="form-input" type="text" id="nc_tecnic" name="nc_tecnic"
-                               placeholder="Deixa buit si és classe virtual">
+                        <label class="form-label" for="nc_tecnic">
+                            Nom del tècnic <small>(opcional — deixa buit si és virtual)</small>
+                        </label>
+                        <input class="form-input <?= isset($errors_nova['nc_tecnic']) ? 'input-error' : '' ?>"
+                               type="text" id="nc_tecnic" name="nc_tecnic"
+                               placeholder="Deixa buit si és classe virtual"
+                               maxlength="100"
+                               value="<?= htmlspecialchars($old_nova['nc_tecnic'] ?? '') ?>">
+                        <?php if (isset($errors_nova['nc_tecnic'])): ?>
+                            <span class="form-error-server">⚠ <?= htmlspecialchars($errors_nova['nc_tecnic']) ?></span>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Categoria -->
                     <div class="form-group">
                         <label class="form-label" for="nc_categoria">Categoria *</label>
-                        <select class="form-select" id="nc_categoria" name="nc_categoria" required>
+                        <select class="form-select <?= isset($errors_nova['nc_categoria']) ? 'input-error' : '' ?>"
+                                id="nc_categoria" name="nc_categoria">
                             <option value="">— Selecciona —</option>
-                            <option value="Força">🏋️ Força</option>
-                            <option value="Cardiovascular">🏃 Cardiovascular</option>
-                            <option value="Cos i ment">🧘 Cos i ment</option>
-                            <option value="Virtual">💻 Virtual</option>
-                            <option value="Aquàtica">🏊 Aquàtica</option>
+                            <?php foreach (['Força' => '🏋️', 'Cardiovascular' => '🏃', 'Cos i ment' => '🧘', 'Virtual' => '💻', 'Aquàtica' => '🏊'] as $cat => $ico): ?>
+                            <option value="<?= $cat ?>" <?= ($old_nova['nc_categoria'] ?? '') === $cat ? 'selected' : '' ?>>
+                                <?= $ico ?> <?= $cat ?>
+                            </option>
+                            <?php endforeach; ?>
                         </select>
-                        <span class="form-error" id="err_categoria">Selecciona una categoria.</span>
+                        <?php if (isset($errors_nova['nc_categoria'])): ?>
+                            <span class="form-error-server">⚠ <?= htmlspecialchars($errors_nova['nc_categoria']) ?></span>
+                        <?php else: ?>
+                            <span class="form-error-js" id="js_err_categoria">Has de seleccionar una categoria.</span>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Intensitat -->
                     <div class="form-group">
                         <label class="form-label" for="nc_intensitat">Intensitat *</label>
-                        <select class="form-select" id="nc_intensitat" name="nc_intensitat" required>
+                        <select class="form-select <?= isset($errors_nova['nc_intensitat']) ? 'input-error' : '' ?>"
+                                id="nc_intensitat" name="nc_intensitat">
                             <option value="">— Selecciona —</option>
-                            <option value="Baixa">Baixa</option>
-                            <option value="Mitjana">Mitjana</option>
-                            <option value="Alta">Alta</option>
+                            <?php foreach (['Baixa', 'Mitjana', 'Alta'] as $int): ?>
+                            <option value="<?= $int ?>" <?= ($old_nova['nc_intensitat'] ?? '') === $int ? 'selected' : '' ?>>
+                                <?= $int ?>
+                            </option>
+                            <?php endforeach; ?>
                         </select>
-                        <span class="form-error" id="err_intensitat">Selecciona la intensitat.</span>
+                        <?php if (isset($errors_nova['nc_intensitat'])): ?>
+                            <span class="form-error-server">⚠ <?= htmlspecialchars($errors_nova['nc_intensitat']) ?></span>
+                        <?php else: ?>
+                            <span class="form-error-js" id="js_err_intensitat">Has de seleccionar la intensitat.</span>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Durada -->
                     <div class="form-group">
                         <label class="form-label" for="nc_durada">Durada (minuts) *</label>
-                        <input class="form-input" type="number" id="nc_durada" name="nc_durada"
-                               min="1" max="180" placeholder="Ex: 60" required>
-                        <span class="form-error" id="err_durada">Introdueix una durada vàlida.</span>
+                        <input class="form-input <?= isset($errors_nova['nc_durada']) ? 'input-error' : '' ?>"
+                               type="number" id="nc_durada" name="nc_durada"
+                               min="1" max="180" placeholder="Ex: 60"
+                               value="<?= htmlspecialchars($old_nova['nc_durada_raw'] ?? '') ?>">
+                        <?php if (isset($errors_nova['nc_durada'])): ?>
+                            <span class="form-error-server">⚠ <?= htmlspecialchars($errors_nova['nc_durada']) ?></span>
+                        <?php else: ?>
+                            <span class="form-error-js" id="js_err_durada">La durada ha d'estar entre 1 i 180 minuts.</span>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Places -->
                     <div class="form-group">
                         <label class="form-label" for="nc_places">Places *</label>
-                        <input class="form-input" type="number" id="nc_places" name="nc_places"
-                               min="1" max="500" placeholder="Ex: 25" required>
-                        <span class="form-error" id="err_places">Introdueix el nombre de places.</span>
+                        <input class="form-input <?= isset($errors_nova['nc_places']) ? 'input-error' : '' ?>"
+                               type="number" id="nc_places" name="nc_places"
+                               min="1" max="500" placeholder="Ex: 25"
+                               value="<?= htmlspecialchars($old_nova['nc_places_raw'] ?? '') ?>">
+                        <?php if (isset($errors_nova['nc_places'])): ?>
+                            <span class="form-error-server">⚠ <?= htmlspecialchars($errors_nova['nc_places']) ?></span>
+                        <?php else: ?>
+                            <span class="form-error-js" id="js_err_places">Les places han d'estar entre 1 i 500.</span>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Estudi -->
                     <div class="form-group">
                         <label class="form-label" for="nc_estudi">Estudi / Espai *</label>
-                        <select class="form-select" id="nc_estudi" name="nc_estudi" required>
+                        <select class="form-select <?= isset($errors_nova['nc_estudi']) ? 'input-error' : '' ?>"
+                                id="nc_estudi" name="nc_estudi">
                             <option value="">— Selecciona —</option>
-                            <option value="Estudi 1">Estudi 1</option>
-                            <option value="Estudi 2">Estudi 2</option>
-                            <option value="Estudi 3">Estudi 3</option>
-                            <option value="Piscina">Piscina</option>
+                            <?php foreach (['Estudi 1', 'Estudi 2', 'Estudi 3', 'Piscina'] as $est): ?>
+                            <option value="<?= $est ?>" <?= ($old_nova['nc_estudi'] ?? '') === $est ? 'selected' : '' ?>>
+                                <?= $est ?>
+                            </option>
+                            <?php endforeach; ?>
                         </select>
-                        <span class="form-error" id="err_estudi">Selecciona un espai.</span>
+                        <?php if (isset($errors_nova['nc_estudi'])): ?>
+                            <span class="form-error-server">⚠ <?= htmlspecialchars($errors_nova['nc_estudi']) ?></span>
+                        <?php else: ?>
+                            <span class="form-error-js" id="js_err_estudi">Has de seleccionar un espai.</span>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Horari -->
                     <div class="form-group">
                         <label class="form-label" for="nc_horari">Horari *</label>
-                        <input class="form-input" type="time" id="nc_horari" name="nc_horari" required>
-                        <span class="form-error" id="err_horari">Introdueix l'horari.</span>
+                        <input class="form-input <?= isset($errors_nova['nc_horari']) ? 'input-error' : '' ?>"
+                               type="time" id="nc_horari" name="nc_horari"
+                               value="<?= htmlspecialchars($old_nova['nc_horari'] ?? '') ?>">
+                        <?php if (isset($errors_nova['nc_horari'])): ?>
+                            <span class="form-error-server">⚠ <?= htmlspecialchars($errors_nova['nc_horari']) ?></span>
+                        <?php else: ?>
+                            <span class="form-error-js" id="js_err_horari">L'horari és obligatori.</span>
+                        <?php endif; ?>
                     </div>
 
                 </div>
@@ -905,13 +1066,12 @@ $icones_categoria = [
                 <button type="submit" class="btn-submit" id="btnSubmit">Crear classe</button>
             </div>
         </form>
-
     </div>
 </div>
 <?php endif; ?>
 
 <script>
-// ── Filtre de categories ──────────────────────────────
+// ── Filtres ───────────────────────────────────────────
 function filtrar(categoria, btn) {
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
@@ -934,50 +1094,88 @@ if (feedback) {
 function obrirModal() {
     document.getElementById('modalOverlay').classList.add('open');
     document.body.style.overflow = 'hidden';
-    document.getElementById('nc_nom').focus();
+    setTimeout(() => document.getElementById('nc_nom')?.focus(), 100);
 }
-
 function tancarModal() {
     document.getElementById('modalOverlay').classList.remove('open');
     document.body.style.overflow = '';
 }
-
 function tancarModalFora(e) {
     if (e.target === document.getElementById('modalOverlay')) tancarModal();
 }
-
-// Tancar amb Escape
 document.addEventListener('keydown', e => { if (e.key === 'Escape') tancarModal(); });
 
-// ── Validació del formulari ───────────────────────────
+// Auto-obrir si el servidor ha retornat errors de validació
+<?php if (!empty($errors_nova)): ?>
+window.addEventListener('DOMContentLoaded', () => obrirModal());
+<?php endif; ?>
+
+// ── Validació JS (primera capa — el servidor sempre és l'última paraula) ──
 document.getElementById('formNovaClasse')?.addEventListener('submit', function(e) {
     let valid = true;
 
+    // Configuració dels camps a validar
     const camps = [
-        { id: 'nc_nom',       err: 'err_nom',        check: v => v.trim() !== '' },
-        { id: 'nc_categoria', err: 'err_categoria',   check: v => v !== '' },
-        { id: 'nc_intensitat',err: 'err_intensitat',  check: v => v !== '' },
-        { id: 'nc_durada',    err: 'err_durada',      check: v => v > 0 && v <= 180 },
-        { id: 'nc_places',    err: 'err_places',      check: v => v > 0 && v <= 500 },
-        { id: 'nc_estudi',    err: 'err_estudi',      check: v => v !== '' },
-        { id: 'nc_horari',    err: 'err_horari',      check: v => v !== '' },
+        {
+            id: 'nc_nom',
+            errId: 'js_err_nom',
+            check: v => v.trim().length >= 2 && v.trim().length <= 100 && !(/^\d+$/.test(v.trim()))
+        },
+        {
+            id: 'nc_categoria',
+            errId: 'js_err_categoria',
+            check: v => v !== ''
+        },
+        {
+            id: 'nc_intensitat',
+            errId: 'js_err_intensitat',
+            check: v => v !== ''
+        },
+        {
+            id: 'nc_durada',
+            errId: 'js_err_durada',
+            check: v => v !== '' && Number.isInteger(Number(v)) && Number(v) >= 1 && Number(v) <= 180
+        },
+        {
+            id: 'nc_places',
+            errId: 'js_err_places',
+            check: v => v !== '' && Number.isInteger(Number(v)) && Number(v) >= 1 && Number(v) <= 500
+        },
+        {
+            id: 'nc_estudi',
+            errId: 'js_err_estudi',
+            check: v => v !== ''
+        },
+        {
+            id: 'nc_horari',
+            errId: 'js_err_horari',
+            check: v => v !== ''
+        },
     ];
 
-    camps.forEach(({ id, err, check }) => {
-        const input = document.getElementById(id);
-        const errEl = document.getElementById(err);
+    camps.forEach(({ id, errId, check }) => {
+        const input  = document.getElementById(id);
+        const errEl  = document.getElementById(errId);
+        if (!input) return;
+
         if (!check(input.value)) {
-            errEl.style.display = 'block';
-            input.style.borderColor = 'var(--red)';
+            input.classList.add('input-error');
+            if (errEl) errEl.style.display = 'block';
             valid = false;
         } else {
-            errEl.style.display = 'none';
-            input.style.borderColor = '';
+            input.classList.remove('input-error');
+            if (errEl) errEl.style.display = 'none';
         }
     });
 
-    if (!valid) e.preventDefault();
-    else document.getElementById('btnSubmit').disabled = true;
+    if (!valid) {
+        e.preventDefault(); // Atura l'enviament si el JS detecta errors
+    } else {
+        // Deshabilitar el botó per evitar doble enviament
+        const btn = document.getElementById('btnSubmit');
+        btn.disabled = true;
+        btn.textContent = 'Creant...';
+    }
 });
 </script>
 </body>

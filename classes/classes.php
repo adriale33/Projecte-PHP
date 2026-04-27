@@ -143,7 +143,8 @@ $ci = $colors_intensitat[$classe['intensitat']] ?? $colors_intensitat['Mitjana']
             transition: all .2s;
         }
         .btn-nav:hover        { border-color: var(--accent); color: var(--accent); }
-        .btn-nav.logout:hover { border-color: var(--red);    color: var(--red);    }
+        .btn-nav.logout       { border-color: var(--red); background: var(--red); color: #fff; }
+        .btn-nav.logout:hover { background: #c53030; border-color: #c53030; color: #fff; }
 
         /* HERO */
         .hero {
@@ -375,7 +376,7 @@ $ci = $colors_intensitat[$classe['intensitat']] ?? $colors_intensitat['Mitjana']
     <a class="logo" href="../dashboard.php">Projecte Gimnàs</a>
     <div class="topbar-right">
         <a href="../dashboard.php" class="btn-nav">← Tornar</a>
-        <a href="../logout.php" class="btn-nav logout">Sortir</a>
+        <a href="../logout.php" class="btn-nav logout">Tancar sessió</a>
     </div>
 </nav>
 
