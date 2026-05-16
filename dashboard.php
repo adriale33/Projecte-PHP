@@ -539,6 +539,26 @@ $icones_categoria = [
             cursor: default;
         }
 
+        .btn-cancelar {
+            width: 30px;
+            height: 30px;
+            border-radius: 7px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            font-size: .8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: all .2s;
+        }
+        .btn-cancelar:hover {
+            border-color: var(--red);
+            color: var(--red);
+            background: rgba(239,68,68,.1);
+        }
+
         @media (max-width: 640px) {
             .topbar { padding: 0 1rem; }
             .main-wrap { padding: 1.5rem 1rem 3rem; }
@@ -896,6 +916,8 @@ $icones_categoria = [
                         </a>
                         <?php if ($inscrit): ?>
                             <span class="btn-ja-inscrit">✓ Inscrit</span>
+                            <a href="cancelar_inscripcio.php?id=<?= (int)$classe['id_classe'] ?>"
+                               class="btn-cancelar" title="Cancel·lar inscripció">✕</a>
                         <?php else: ?>
                             <form method="POST" style="display:inline;">
                                 <input type="hidden" name="id_classe" value="<?= (int)$classe['id_classe'] ?>">
