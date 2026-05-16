@@ -20,6 +20,12 @@ $old_nova    = [];
 $missatge       = '';
 $missatge_tipus = '';
 
+// Missatge de cancel·lació vingut per GET
+if (isset($_GET['cancelada'])) {
+    $missatge       = 'Inscripció cancel·lada correctament.';
+    $missatge_tipus = 'warning';
+}
+
 // =========================================================
 // CREATE: Nova classe (només admin)
 // =========================================================
@@ -916,7 +922,7 @@ $icones_categoria = [
                         </a>
                         <?php if ($inscrit): ?>
                             <span class="btn-ja-inscrit">✓ Inscrit</span>
-                            <a href="cancelar_inscripcio.php?id=<?= (int)$classe['id_classe'] ?>"
+                            <a href="reserves/cancelar_inscripcio.php?id=<?= (int)$classe['id_classe'] ?>"
                                class="btn-cancelar" title="Cancel·lar inscripció">✕</a>
                         <?php else: ?>
                             <form method="POST" style="display:inline;">
