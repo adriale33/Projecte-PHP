@@ -26,6 +26,12 @@ if (isset($_GET['cancelada'])) {
     $missatge_tipus = 'warning';
 }
 
+// Missatge d'eliminació de classe vingut per GET
+if (isset($_GET['eliminada'])) {
+    $missatge       = 'Classe eliminada correctament.';
+    $missatge_tipus = 'success';
+}
+
 // =========================================================
 // CREATE: Nova classe (només admin)
 // =========================================================
@@ -922,7 +928,7 @@ $icones_categoria = [
                         </a>
                         <?php if ($inscrit): ?>
                             <span class="btn-ja-inscrit">✓ Inscrit</span>
-                            <a href="reserves/cancelar_inscripcio.php?id=<?= (int)$classe['id_classe'] ?>"
+                            <a href="cancelar_inscripcio.php?id=<?= (int)$classe['id_classe'] ?>"
                                class="btn-cancelar" title="Cancel·lar inscripció">✕</a>
                         <?php else: ?>
                             <form method="POST" style="display:inline;">
