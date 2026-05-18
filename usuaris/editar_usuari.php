@@ -4,6 +4,8 @@ require_once '../auth.php';
 requireAdmin();
 
 require_once '../config.php';
+require_once '../csrf.php';
+csrf_generar();
 
 $rols_ok = ['usuari', 'admin'];
 
@@ -36,6 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     && isset($_POST['accio'])
     && $_POST['accio'] === 'editar_usuari'
 ) {
+    csrf_verificar();
     $nom_usuari      = trim($_POST['nom_usuari']      ?? '');
     $email           = trim($_POST['email']           ?? '');
     $nova_contrasenya= trim($_POST['nova_contrasenya']?? '');
@@ -438,6 +441,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
 
     <form method="POST" id="formEditar">
         <input type="hidden" name="accio" value="editar_usuari">
+        <?= csrf_camp() ?>
 
         <!-- DADES PRINCIPALS -->
         <div class="form-card">

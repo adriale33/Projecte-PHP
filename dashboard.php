@@ -4,6 +4,8 @@ require_once 'auth.php';
 requireLogin();
 
 require_once 'config.php';
+require_once 'csrf.php';
+csrf_generar();
 
 $user_id   = $_SESSION['usuari_id'];
 $user_name = $_SESSION['nom_usuari'] ?? 'Usuari';
@@ -39,7 +41,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     && isset($_POST['accio'])
     && $_POST['accio'] === 'nova_classe'
 ) {
-    // Doble comprovació: ha de ser admin fins i tot si manipulen el POST
+    csrf_verificar();
+
     if (!$is_admin) {
         header('Location: dashboard.php');
         exit;
@@ -174,6 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
 // CREATE: Inscripció a una classe
 // =========================================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['inscriure'], $_POST['id_classe'])) {
+    csrf_verificar();
     $id_classe = (int) $_POST['id_classe'];
 
     $stmt = $pdo->prepare("SELECT id_reserva FROM reserves WHERE usuari_id = ? AND classe_id = ?");
@@ -923,15 +927,19 @@ $icones_categoria = [
                             <a href="classes/eliminar_classe.php?id=<?= (int)$classe['id_classe'] ?>"
                                class="btn-icon btn-icon-delete" title="Eliminar classe">🗑️</a>
                         <?php endif; ?>
-                        <a href="classes/classes.php?id=<?= (int)$classe['id_classe'] ?>" class="btn-ficha">
+                        <a href="classes/clases.php?id=<?= (int)$classe['id_classe'] ?>" class="btn-ficha">
                             Fitxa →
                         </a>
                         <?php if ($inscrit): ?>
                             <span class="btn-ja-inscrit">✓ Inscrit</span>
-                            <a href="cancelar_inscripcio.php?id=<?= (int)$classe['id_classe'] ?>"
-                               class="btn-cancelar" title="Cancel·lar inscripció">✕</a>
+                            <form method="POST" action="reserves/cancelar_inscripcio.php" style="display:inline;">
+                                <?= csrf_camp() ?>
+                                <input type="hidden" name="id_classe" value="<?= (int)$classe['id_classe'] ?>">
+                                <button type="submit" class="btn-cancelar" title="Cancel·lar inscripció">✕</button>
+                            </form>
                         <?php else: ?>
                             <form method="POST" style="display:inline;">
+                                <?= csrf_camp() ?>
                                 <input type="hidden" name="id_classe" value="<?= (int)$classe['id_classe'] ?>">
                                 <button type="submit" name="inscriure" class="btn-inscriure">
                                     Inscriure'm
@@ -961,6 +969,7 @@ $icones_categoria = [
 
         <form method="POST" id="formNovaClasse" novalidate>
             <input type="hidden" name="accio" value="nova_classe">
+            <?= csrf_camp() ?>
             <div class="modal-body">
                 <div class="form-grid">
 

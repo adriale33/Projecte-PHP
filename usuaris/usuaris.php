@@ -4,6 +4,8 @@ require_once '../auth.php';
 requireAdmin();
 
 require_once '../config.php';
+require_once '../csrf.php';
+csrf_generar();
 
 $admin_name = $_SESSION['nom_usuari'] ?? 'Administrador';
 
@@ -42,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     && isset($_POST['accio'])
     && $_POST['accio'] === 'nou_usuari'
 ) {
+    csrf_verificar();
     $nou_nom         = trim($_POST['nou_nom']         ?? '');
     $nou_email       = trim($_POST['nou_email']       ?? '');
     $nou_contrasenya = trim($_POST['nou_contrasenya'] ?? '');
@@ -707,6 +710,7 @@ $total_actius  = (int)$pdo->query("SELECT COUNT(*) FROM usuaris WHERE actiu = 1"
 
         <form method="POST" id="formNouUsuari" novalidate>
             <input type="hidden" name="accio" value="nou_usuari">
+            <?= csrf_camp() ?>
             <div class="modal-body">
                 <div class="form-grid">
 

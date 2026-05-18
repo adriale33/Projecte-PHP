@@ -4,9 +4,23 @@ require_once '../auth.php';
 requireLogin();
 
 require_once '../config.php';
+require_once '../csrf.php';
+csrf_generar();
 
-$user_id   = $_SESSION['usuari_id'];
-$id_classe = isset($_GET['id']) && ctype_digit($_GET['id']) ? (int)$_GET['id'] : 0;
+$user_id = $_SESSION['usuari_id'];
+
+// Només acceptar POST
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: ../dashboard.php');
+    exit;
+}
+
+// Verificar CSRF
+csrf_verificar();
+
+// Validar ID
+$id_classe = isset($_POST['id_classe']) && ctype_digit($_POST['id_classe'])
+    ? (int)$_POST['id_classe'] : 0;
 
 if ($id_classe === 0) {
     header('Location: ../dashboard.php');

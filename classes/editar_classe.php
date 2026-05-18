@@ -4,6 +4,8 @@ require_once '../auth.php';
 requireAdmin();
 
 require_once '../config.php';
+require_once '../csrf.php';
+csrf_generar();
 
 // Llistes de valors permesos
 $categories_ok  = ['Força', 'Cardiovascular', 'Cos i ment', 'Virtual', 'Aquàtica'];
@@ -36,6 +38,7 @@ $missatge_tipus = '';
 // UPDATE: Modificar la classe
 // =========================================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accio']) && $_POST['accio'] === 'editar_classe') {
+    csrf_verificar();
 
     $nom        = trim($_POST['nom']        ?? '');
     $nom_tecnic = trim($_POST['nom_tecnic'] ?? '');
@@ -410,6 +413,7 @@ $icones_categoria = [
     <!-- FORMULARI -->
     <form method="POST" id="formEditar">
         <input type="hidden" name="accio" value="editar_classe">
+        <?= csrf_camp() ?>
 
         <div class="form-card">
             <div class="form-card-head">

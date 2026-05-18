@@ -4,6 +4,8 @@ require_once '../auth.php';
 requireAdmin();
 
 require_once '../config.php';
+require_once '../csrf.php';
+csrf_generar();
 
 // Validar ID
 if (!isset($_GET['id']) || !ctype_digit($_GET['id'])) {
@@ -39,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     && isset($_POST['confirmar'])
     && $_POST['confirmar'] === 'si'
 ) {
+    csrf_verificar();
     // Primer eliminar les reserves associades
     $stmt = $pdo->prepare("DELETE FROM reserves WHERE classe_id = ?");
     $stmt->execute([$id_classe]);
@@ -342,6 +345,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
                 <form method="POST" style="display:inline;">
                     <input type="hidden" name="accio"     value="eliminar_classe">
                     <input type="hidden" name="confirmar" value="si">
+                    <?= csrf_camp() ?>
                     <button type="submit" class="btn-delete" id="btnDelete"
                             onclick="this.disabled=true; this.textContent='Eliminant...'; this.form.submit();">
                         🗑️ Sí, eliminar
