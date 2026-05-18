@@ -21,6 +21,18 @@ if (isset($_GET['editat'])) {
     $missatge_tipus = 'success';
 }
 
+// Missatge vingut per GET des d'eliminar_usuari.php
+if (isset($_GET['eliminat'])) {
+    $missatge       = 'Usuari eliminat correctament.';
+    $missatge_tipus = 'success';
+}
+
+// Error: intent d'eliminar el propi compte
+if (isset($_GET['error']) && $_GET['error'] === 'self') {
+    $missatge       = 'No pots eliminar el teu propi compte.';
+    $missatge_tipus = 'error';
+}
+
 $rols_ok = ['usuari', 'admin'];
 
 // =========================================================
