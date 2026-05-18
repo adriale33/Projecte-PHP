@@ -927,7 +927,7 @@ $icones_categoria = [
                             <a href="classes/eliminar_classe.php?id=<?= (int)$classe['id_classe'] ?>"
                                class="btn-icon btn-icon-delete" title="Eliminar classe">🗑️</a>
                         <?php endif; ?>
-                        <a href="classes/clases.php?id=<?= (int)$classe['id_classe'] ?>" class="btn-ficha">
+                        <a href="classes/classes.php?id=<?= (int)$classe['id_classe'] ?>" class="btn-ficha">
                             Fitxa →
                         </a>
                         <?php if ($inscrit): ?>
