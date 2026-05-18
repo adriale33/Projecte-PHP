@@ -15,6 +15,12 @@ $old_nou        = [];
 $missatge       = '';
 $missatge_tipus = '';
 
+// Missatge vingut per GET des d'editar_usuari.php
+if (isset($_GET['editat'])) {
+    $missatge       = 'Usuari actualitzat correctament.';
+    $missatge_tipus = 'success';
+}
+
 $rols_ok = ['usuari', 'admin'];
 
 // =========================================================
